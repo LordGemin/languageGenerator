@@ -1,6 +1,7 @@
 package com.mugenico.languageGenerator;
 
 
+import com.mugenico.languageGenerator.generators.Sentences;
 import com.mugenico.languageGenerator.generators.Words;
 
 /**
@@ -49,5 +50,11 @@ public class Main {
         System.out.println("Number of created lake morphemes: "+words.getLakeMorphemes().size());
         System.out.println("Number of created name morphemes: "+words.getNameMorphemes().size());
         System.out.println("Number of created common morphemes: "+words.getCommonMorphemes().size());
+
+
+        for(int i =1; i<=10;i++) {
+            Sentences sentences = new Sentences();
+            System.out.println("("+sentences.getUsedLanguage()+") "+"Sentence "+i+": "+sentences.createSentence());
+        }
     }
 }

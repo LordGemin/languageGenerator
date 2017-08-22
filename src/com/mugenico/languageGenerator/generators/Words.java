@@ -1,8 +1,6 @@
 package com.mugenico.languageGenerator.generators;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Defining class for the construction of our words
@@ -11,6 +9,46 @@ import java.util.Random;
  * Created by Gemin on 14.08.2017.
  */
 public class Words {
+
+    private enum Languages {
+        A('A'),
+        S('S'),
+        J('J');
+
+        private final char fieldDescription;
+
+
+        Languages(char value) {
+            fieldDescription = value;
+        }
+
+        @Override
+        public String toString() {
+            return ""+fieldDescription;
+        }
+
+        public char getFieldDescription() {
+            return fieldDescription;
+        }
+
+        public static Languages getField(char description) {
+            for(Languages a: Languages.values()) {
+                if(a.getFieldDescription() == description ) {
+                    return a;
+                }
+            }
+            return null;
+        }
+
+
+        private static final Languages[] VALUES = values();
+        private static final int SIZE = VALUES.length;
+        private static final Random RANDOM = new Random();
+
+        public static Languages randomLanguage()  {
+            return VALUES[RANDOM.nextInt(SIZE)];
+        }
+    }
 
     // TODO: Find a way to use this
     //private static final float AVG_WORD_LENGTH = 2.4f;
@@ -33,11 +71,11 @@ public class Words {
     private static final boolean A_PLACE_NAME_END = true;
 
     private final static String SK_CONSTRUCT = "V??CVF?";
-    private static final int SK_MAX_WORD_LENGTH = 3;
+    private static final int SK_MAX_WORD_LENGTH = 2;
 
-    private static final String[] SK_CONSONANTS = {"sk", "s", "st", "h", "m", "t", "k", "ch"};
+    private static final String[] SK_CONSONANTS = {"sk", "s", "st", "h", "m", "t", "k", "l", "sf", "r"};
     private static final String[] SK_VOWELS = {"a", "å", "e", "o",  "i","u"};
-    private static final String[] SK_FINALS = {"f", "ft"};
+    private static final String[] SK_FINALS = {"f", "kr"};
     private static final String[] SK_LIQUIDS = {};
     private static final String[] SK_SIBILANTS = {};
     private static final String[] SK_BANNED_COMBOS = {"åå"};
@@ -120,82 +158,73 @@ public class Words {
         return commonMorphemes;
     }
 
-//
-//    /**
-//     * Upon construction, some first Morphemes are created.
-//     */
-//    public Words() {
-//        CONSTRUCT = A_CONSTRUCT;
-//        MAX_WORD_LENGTH = A_MAX_WORD_LENGTH;
-//        CONSONANTS = A_CONSONANTS;
-//        LIQUIDS = A_LIQUIDS;
-//        SIBILANTS = A_SIBILANTS;
-//        VOWELS = A_VOWELS;
-//        FINALS = A_FINALS;
-//        BANNED_COMBOS = A_BANNED_COMBOS;
-//
-//        for(int i = 0; i<1000; i++) {
-//            createMorpheme();
-//        }
-//    }
+    private char usedLanguage;
+
+
+    /**
+     * Upon construction, some first Morphemes with one of the language sets are created.
+     */
+    public Words() {
+        this(Languages.randomLanguage().getFieldDescription());
+    }
 
     /**
      * Upon construction, some first Morphemes are created.
      */
     public Words(char code) {
 
-        switch(code) {
-            case 'A':
-                CONSTRUCT = A_CONSTRUCT;
-                MAX_WORD_LENGTH = A_MAX_WORD_LENGTH;
-                CONSONANTS = A_CONSONANTS;
-                LIQUIDS = A_LIQUIDS;
-                SIBILANTS = A_SIBILANTS;
-                VOWELS = A_VOWELS;
-                FINALS = A_FINALS;
-                BANNED_COMBOS = A_BANNED_COMBOS;
-                CAPITALIZATION = A_CAPITALIZATION;
-                PLACE_NAME_START = A_PLACE_NAME_START;
-                PLACE_NAME_END = A_PLACE_NAME_END;
-                break;
-            case 'J':
-                CONSTRUCT = J_CONSTRUCT;
-                MAX_WORD_LENGTH = J_MAX_WORD_LENGTH;
-                CONSONANTS = J_CONSONANTS;
-                LIQUIDS = J_LIQUIDS;
-                SIBILANTS = J_SIBILANTS;
-                VOWELS = J_VOWELS;
-                FINALS = J_FINALS;
-                BANNED_COMBOS = J_BANNED_COMBOS;
-                CAPITALIZATION = J_CAPITALIZATION;
-                PLACE_NAME_START = J_PLACE_NAME_START;
-                PLACE_NAME_END = J_PLACE_NAME_END;
-                break;
-            case 'S':
-                CONSTRUCT = SK_CONSTRUCT;
-                MAX_WORD_LENGTH = SK_MAX_WORD_LENGTH;
-                CONSONANTS = SK_CONSONANTS;
-                LIQUIDS = SK_LIQUIDS;
-                SIBILANTS = SK_SIBILANTS;
-                VOWELS = SK_VOWELS;
-                FINALS = SK_FINALS;
-                BANNED_COMBOS = SK_BANNED_COMBOS;
-                CAPITALIZATION = SK_CAPITALIZATION;
-                PLACE_NAME_START = SK_PLACE_NAME_START;
-                PLACE_NAME_END = SK_PLACE_NAME_END;
-                break;
-            default:
-                CONSTRUCT = A_CONSTRUCT;
-                MAX_WORD_LENGTH = A_MAX_WORD_LENGTH;
-                CONSONANTS = A_CONSONANTS;
-                LIQUIDS = A_LIQUIDS;
-                SIBILANTS = A_SIBILANTS;
-                VOWELS = A_VOWELS;
-                FINALS = A_FINALS;
-                BANNED_COMBOS = A_BANNED_COMBOS;
-                CAPITALIZATION = A_CAPITALIZATION;
-                PLACE_NAME_START = A_PLACE_NAME_START;
-                PLACE_NAME_END = A_PLACE_NAME_END;
+        if(code == Languages.A.getFieldDescription()) {
+            CONSTRUCT = A_CONSTRUCT;
+            MAX_WORD_LENGTH = A_MAX_WORD_LENGTH;
+            CONSONANTS = A_CONSONANTS;
+            LIQUIDS = A_LIQUIDS;
+            SIBILANTS = A_SIBILANTS;
+            VOWELS = A_VOWELS;
+            FINALS = A_FINALS;
+            BANNED_COMBOS = A_BANNED_COMBOS;
+            CAPITALIZATION = A_CAPITALIZATION;
+            PLACE_NAME_START = A_PLACE_NAME_START;
+            PLACE_NAME_END = A_PLACE_NAME_END;
+            usedLanguage = Languages.A.getFieldDescription();
+        } else if (code == Languages.S.getFieldDescription()) {
+            CONSTRUCT = SK_CONSTRUCT;
+            MAX_WORD_LENGTH = SK_MAX_WORD_LENGTH;
+            CONSONANTS = SK_CONSONANTS;
+            LIQUIDS = SK_LIQUIDS;
+            SIBILANTS = SK_SIBILANTS;
+            VOWELS = SK_VOWELS;
+            FINALS = SK_FINALS;
+            BANNED_COMBOS = SK_BANNED_COMBOS;
+            CAPITALIZATION = SK_CAPITALIZATION;
+            PLACE_NAME_START = SK_PLACE_NAME_START;
+            PLACE_NAME_END = SK_PLACE_NAME_END;
+            usedLanguage = Languages.S.getFieldDescription();
+        } else if (code == Languages.J.getFieldDescription()) {
+            CONSTRUCT = J_CONSTRUCT;
+            MAX_WORD_LENGTH = J_MAX_WORD_LENGTH;
+            CONSONANTS = J_CONSONANTS;
+            LIQUIDS = J_LIQUIDS;
+            SIBILANTS = J_SIBILANTS;
+            VOWELS = J_VOWELS;
+            FINALS = J_FINALS;
+            BANNED_COMBOS = J_BANNED_COMBOS;
+            CAPITALIZATION = J_CAPITALIZATION;
+            PLACE_NAME_START = J_PLACE_NAME_START;
+            PLACE_NAME_END = J_PLACE_NAME_END;
+            usedLanguage = Languages.J.getFieldDescription();
+        } else {
+            CONSTRUCT = A_CONSTRUCT;
+            MAX_WORD_LENGTH = A_MAX_WORD_LENGTH;
+            CONSONANTS = A_CONSONANTS;
+            LIQUIDS = A_LIQUIDS;
+            SIBILANTS = A_SIBILANTS;
+            VOWELS = A_VOWELS;
+            FINALS = A_FINALS;
+            BANNED_COMBOS = A_BANNED_COMBOS;
+            CAPITALIZATION = A_CAPITALIZATION;
+            PLACE_NAME_START = A_PLACE_NAME_START;
+            PLACE_NAME_END = A_PLACE_NAME_END;
+            usedLanguage = Languages.A.getFieldDescription();
         }
 
         for(int i = 0; i<200; i++) {
@@ -353,7 +382,7 @@ public class Words {
 
         // Creating a word with maximal size of MAX_WORD_LENGTH
         // TODO: Let words hover around AVG_WORD_LENGTH;
-        while(word.length() <= length) {
+        for(int i = 0; i<=length;i++) {
             word.append(getCommonMorphemes().get(rng.nextInt(coLength)));
         }
 
@@ -378,7 +407,49 @@ public class Words {
         return toReturn.substring(0, 1).toUpperCase() + toReturn.substring(1);
     }
 
+    public boolean usesCAPITALIZATION () {
+        return CAPITALIZATION;
+    }
 
+    /**
+     * Creating a very short word from a single morpheme, to be used as article.
+     * To stop the article from being ever used again, we delete the morpheme from the common-morpheme base
+     *
+     * @return a created article
+     */
+    public String createArticle() {
+        Random rng = new Random();
+        int coLength = getCommonMorphemes().size();
+        return getCommonMorphemes().remove(rng.nextInt(coLength));
+    }
+
+    /**
+     * Creating a usually very short word from just 1 or 2 morphemes, to be used as conjunction.
+     *
+     * @return short word as conjunction
+     */
+    public String createConjunction() {
+        StringBuilder sb = new StringBuilder();
+        Random rng = new Random();
+        int coLength = getCommonMorphemes().size();
+
+        // random int from [0,5[ --> 5 values {0,1,2,3,4}
+        int length = rng.nextInt(5);
+
+        sb.append(getCommonMorphemes().remove(rng.nextInt(coLength-1)));
+
+        // We use two morphemes in 2/5 cases
+        if(length <= 1) {
+            sb.append(getCommonMorphemes().remove(rng.nextInt(coLength-1)));
+        }
+
+        return sb.toString();
+    }
+
+
+    public char getUsedLanguage() {
+        return usedLanguage;
+    }
 
     private boolean morphemeExists(String morpheme) {
         return getMorphemes().contains(morpheme);
