@@ -1,11 +1,9 @@
 package com.mugenico.languageGenerator.generators;
 
 import com.mugenico.languageGenerator.generators.Words;
+import com.mugenico.languageGenerator.util.RNG;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Using the Word-Generator to create sentences following predefined patterns.
@@ -18,14 +16,16 @@ import java.util.Random;
  */
 public class Sentences {
 
-    private Words words = new Words();
+    private Words words;
 
 
     // Define some grammar patterns for later use.
     // TODO: Actually use  these patterns
-    private static final String GRAMMAR_PATTERN_A = "SPO(PO)*";
+    private static final String GRAMMAR_PATTERN_A = "SPO(,PO)*";
     private static final String GRAMMAR_PATTERN_J = "(OP)S(OP)OP";
-    private static final String GRAMMAR_PATTERN_S = "SPO(SOP)";
+    private static final String GRAMMAR_PATTERN_S = "SPO(,SOP)";
+
+    private String GRAMMAR_PATTERN;
 
 
     // indefinite length
@@ -43,10 +43,30 @@ public class Sentences {
 
     // default constructor to prefill some nouns, verbs and adjectives
     public Sentences() {
+        try {
+            words = new Words();
+            definePattern();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+        initializeWords(100);
+    }
+
+    public Sentences(char code) {
+        try {
+            words = new Words(code);
+            definePattern();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+        initializeWords(100);
+    }
+
+    private void initializeWords(int amt) {
         Random rng = new Random();
 
         // we create 100 words
-        for(int i = 0; i<=50; i++) {
+        for(int i = 0; i<=amt; i++) {
             String next = words.createWord();
 
             // For now we only want each word once.
@@ -74,7 +94,7 @@ public class Sentences {
 
             // Languages that use capitalization will most likely capitalize nouns
             // So if our word starts with a lower case, we assign it as verb or adjective
-            if(!next.matches("[a-z]*")) {
+            if(!next.equals(next.toLowerCase())) {
                 nouns.add(next);
             } else if(rng.nextBoolean()) {
                 verbs.add(next);
@@ -115,7 +135,16 @@ public class Sentences {
                 break;
             }
         }
+    }
 
+    private void definePattern() {
+        if(getUsedLanguage() == Words.Languages.A.getFieldDescription()) {
+            GRAMMAR_PATTERN = GRAMMAR_PATTERN_A;
+        } else if(getUsedLanguage() == Words.Languages.J.getFieldDescription()) {
+            GRAMMAR_PATTERN = GRAMMAR_PATTERN_J;
+        } else if(getUsedLanguage() == Words.Languages.S.getFieldDescription()) {
+            GRAMMAR_PATTERN = GRAMMAR_PATTERN_S;
+        }
     }
 
 
@@ -131,50 +160,141 @@ public class Sentences {
     }
 
     public String createSentence() {
-        Random rng = new Random();
+        RNG rng = new RNG();
 
         StringBuilder sentence = new StringBuilder();
+        GrammarParser gp = new GrammarParser(GRAMMAR_PATTERN);
 
-        sentence.append(nouns.get(rng.nextInt(nouns.size())));
-        sentence.append(" ");
-        sentence.append(verbs.get(rng.nextInt(verbs.size())));
-        sentence.append(" ");
-        if(articleCount != 0) {
-            sentence.append(articles[rng.nextInt(articleCount)]);
-            sentence.append(" ");
-        }
-        if(rng.nextBoolean()) {
-            sentence.append(adjectives.get(rng.nextInt(adjectives.size())));
-            sentence.append(" ");
-        }
-        sentence.append(nouns.get(rng.nextInt(nouns.size())));
-        if(rng.nextBoolean()) {
-            sentence.append(", ");
-            sentence.append(conjunctions.get(rng.nextInt(conjunctions.size())));
-            sentence.append(" ");
-            sentence.append(nouns.get(rng.nextInt(nouns.size())));
-            sentence.append(" ");
-            sentence.append(verbs.get(rng.nextInt(verbs.size())));
-            sentence.append(" ");
-            if(articleCount != 0) {
-                sentence.append(articles[rng.nextInt(articleCount)]);
-                sentence.append(" ");
+        while(gp.hasNext() && sentence.length() <= 10000) {
+            char next = gp.getNextGrammar();
+            switch (next) {
+                case 'S':
+                    if (articleCount != 0 && rng.nextBoolean()) {
+                        sentence.append(" ");
+                        sentence.append(articles[rng.nextInt(articleCount)]);
+                    }
+                    if(rng.nextBoolean()) {
+                        sentence.append(" ");
+                        sentence.append(adjectives.get(rng.nextInt(adjectives.size())));
+                    }
+                    sentence.append(" ");
+                    sentence.append(nouns.get(rng.nextInt(nouns.size())));
+                    break;
+                case 'O':
+                    if (articleCount != 0) {
+                        sentence.append(" ");
+                        sentence.append(articles[rng.nextInt(articleCount)]);
+                    }
+                    if(rng.nextBoolean()) {
+                        sentence.append(" ");
+                        sentence.append(adjectives.get(rng.nextInt(adjectives.size())));
+                    }
+                    sentence.append(" ");
+                    sentence.append(nouns.get(rng.nextInt(nouns.size())));
+                    break;
+                case 'P':
+                    sentence.append(" ");
+                    String verb = verbs.get(rng.nextInt(verbs.size()));
+                    sentence.append(verb);
+                    break;
+                case ',':
+                    sentence.append(", ");
+                    sentence.append(conjunctions.get(rng.nextInt(conjunctions.size())));
+                    break;
+                case 'e':
+                    return sentence.toString();
+                default:
+                    break;
             }
-            if(rng.nextBoolean()) {
-                sentence.append(adjectives.get(rng.nextInt(adjectives.size())));
-                sentence.append(" ");
-            }
-            sentence.append(nouns.get(rng.nextInt(nouns.size())));
-            sentence.append(".");
-        } else {
-            sentence.append(".");
         }
+        return toUpperCase(sentence.append(".").toString().trim());
+    }
 
-        return sentence.toString();
+    private String toUpperCase(String s) {
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
 
     public char getUsedLanguage() {
         return words.getUsedLanguage();
     }
 
+    private boolean isNoun(String word) {
+        return nouns.contains(word);
+    }
+
+    private boolean isVerb(String word) {
+        return verbs.contains(word);
+    }
+
+    private boolean isAdjective(String word) {
+        return adjectives.contains(word);
+    }
+
+    private boolean isArticle(String word) {
+        return new ArrayList<String>(adjectives).contains(word);
+    }
+
+    private boolean isConjunction(String word) {
+        return conjunctions.contains(word);
+    }
+
+    private void log(String s) {
+        System.out.println(s);
+    }
+
+    private class GrammarParser {
+        private RNG rng = new RNG();
+        private char next;
+        private String optional = "";
+        private int pos = 0;
+        private int pos_opt = 0;
+
+        private final String GRAMMAR;
+
+        GrammarParser(String grammar) {
+            this.GRAMMAR = grammar;
+        }
+
+        char getNextGrammar() {
+            if(!optional.equals("")) {
+                if(pos_opt >= optional.length()) {
+                    if((pos+1) >= GRAMMAR.length()) {
+                        optional = "";
+                        return getNextGrammar();
+                    } else if(GRAMMAR.charAt(pos+1) != '*') {
+                        optional = "";
+                        return getNextGrammar();
+                    } else if(rng.nextBoolean()) {
+                        optional = "";
+                        return getNextGrammar();
+                    }
+                    pos_opt = 0;
+                }
+                next = optional.charAt(pos_opt);
+                pos_opt++;
+            } else {
+                if(!hasNext()) {
+                    return 'e';
+                }
+                next = GRAMMAR.charAt(pos);
+                if(next == '(') {
+                    optional = GRAMMAR.substring(pos+1,GRAMMAR.indexOf(")",pos));
+                    pos_opt = 0;
+                    pos = GRAMMAR.indexOf(")",pos);
+                    if(rng.nextBoolean()) {
+                        optional = "";
+                    }
+                    return getNextGrammar();
+                }
+                pos++;
+            }
+
+            return next;
+        }
+
+        private boolean hasNext() {
+            return pos < GRAMMAR.length();
+        }
+
+    }
 }

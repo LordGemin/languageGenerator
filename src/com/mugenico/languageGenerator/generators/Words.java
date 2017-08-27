@@ -1,5 +1,7 @@
 package com.mugenico.languageGenerator.generators;
 
+import com.mugenico.languageGenerator.util.RNG;
+
 import java.util.*;
 
 /**
@@ -10,7 +12,8 @@ import java.util.*;
  */
 public class Words {
 
-    private enum Languages {
+
+    public enum Languages {
         A('A'),
         S('S'),
         J('J');
@@ -50,8 +53,6 @@ public class Words {
         }
     }
 
-    // TODO: Find a way to use this
-    //private static final float AVG_WORD_LENGTH = 2.4f;
     private int MAX_WORD_LENGTH;
 
     // defining a structure where all syllables begin with a consonant followed by a vowel.
@@ -59,6 +60,7 @@ public class Words {
     // X? --> X is optional
     private final static String A_CONSTRUCT = "CVV?F?";
     private static final int A_MAX_WORD_LENGTH = 2;
+    private static final double A_AVG_WORD_LENGTH = 1.5;
 
     private static final String[] A_CONSONANTS = {"j","sh","dj","ts","w","g","x","q", "r"};
     private static final String[] A_VOWELS = {"o", "ou", "u", "e", "ya"};
@@ -71,7 +73,8 @@ public class Words {
     private static final boolean A_PLACE_NAME_END = true;
 
     private final static String SK_CONSTRUCT = "V??CVF?";
-    private static final int SK_MAX_WORD_LENGTH = 2;
+    private static final int SK_MAX_WORD_LENGTH = 3;
+    private static final double SK_AVG_WORD_LENGTH = 2.3;
 
     private static final String[] SK_CONSONANTS = {"sk", "s", "st", "h", "m", "t", "k", "l", "sf", "r"};
     private static final String[] SK_VOWELS = {"a", "å", "e", "o",  "i","u"};
@@ -85,14 +88,15 @@ public class Words {
 
     private final static String J_CONSTRUCT = "C/L?VF??C/L?+V";
     private static final int J_MAX_WORD_LENGTH = 2;
+    private static final double J_AVG_WORD_LENGTH = 0.8;
 
-    private static final String[] J_CONSONANTS = {"k","t","s","sh","h","n","w", "ch", "f"};
+    private static final String[] J_CONSONANTS = {"k","t","s","sh","h","n","w", "ch", "f", "ts"};
     private static final String[] J_VOWELS = {"a","i","u","e","o", "ū", "ō"};
     private static final String[] J_FINALS = {"n"};
     private static final String[] J_LIQUIDS = {"g","d","b","p"};
     private static final String[] J_SIBILANTS = {};
-    private static final String[] J_BANNED_COMBOS = {"che", "she", "nn", "ti", "si",
-            "wō", "wū", "wu", "wi", "we", "fi", "fe", "fo", "fa", "uu", "du"};
+    private static final String[] J_BANNED_COMBOS = {"che", "she", "nn", "ti", "si", "ū", "ō", "hu", "chon",
+            "wō", "wū", "wu", "wi", "we", "fi", "fe", "fo", "fa", "uu", "du","tō", "tū", "tu", "tsi", "tse", "tso", "tsa"};
     private static final boolean J_CAPITALIZATION = false;
     private static final boolean J_PLACE_NAME_START = false;
     private static final boolean J_PLACE_NAME_END = true;
@@ -107,7 +111,9 @@ public class Words {
     private boolean CAPITALIZATION;
     private boolean PLACE_NAME_START;
     private boolean PLACE_NAME_END;
+    private double AVG_WORD_LENGTH;
 
+    private double WORD_LENGTH_SD = 0.1;
 
     // Catch all phoneme list.
     private List<String> morphemes = new ArrayList<>();
@@ -164,14 +170,17 @@ public class Words {
     /**
      * Upon construction, some first Morphemes with one of the language sets are created.
      */
-    public Words() {
+    public Words() throws IllegalArgumentException {
         this(Languages.randomLanguage().getFieldDescription());
     }
 
     /**
-     * Upon construction, some first Morphemes are created.
+     * Creates first morphemes on creation
+     *
+     * @param code Language code to be used. currently defined codes can be found in Languages
+     * @throws IllegalArgumentException if code is yet undefined
      */
-    public Words(char code) {
+    public Words(char code) throws IllegalArgumentException {
 
         if(code == Languages.A.getFieldDescription()) {
             CONSTRUCT = A_CONSTRUCT;
@@ -185,6 +194,7 @@ public class Words {
             CAPITALIZATION = A_CAPITALIZATION;
             PLACE_NAME_START = A_PLACE_NAME_START;
             PLACE_NAME_END = A_PLACE_NAME_END;
+            AVG_WORD_LENGTH = A_AVG_WORD_LENGTH;
             usedLanguage = Languages.A.getFieldDescription();
         } else if (code == Languages.S.getFieldDescription()) {
             CONSTRUCT = SK_CONSTRUCT;
@@ -198,6 +208,7 @@ public class Words {
             CAPITALIZATION = SK_CAPITALIZATION;
             PLACE_NAME_START = SK_PLACE_NAME_START;
             PLACE_NAME_END = SK_PLACE_NAME_END;
+            AVG_WORD_LENGTH = SK_AVG_WORD_LENGTH;
             usedLanguage = Languages.S.getFieldDescription();
         } else if (code == Languages.J.getFieldDescription()) {
             CONSTRUCT = J_CONSTRUCT;
@@ -211,23 +222,22 @@ public class Words {
             CAPITALIZATION = J_CAPITALIZATION;
             PLACE_NAME_START = J_PLACE_NAME_START;
             PLACE_NAME_END = J_PLACE_NAME_END;
+            AVG_WORD_LENGTH = J_AVG_WORD_LENGTH;
             usedLanguage = Languages.J.getFieldDescription();
         } else {
-            CONSTRUCT = A_CONSTRUCT;
-            MAX_WORD_LENGTH = A_MAX_WORD_LENGTH;
-            CONSONANTS = A_CONSONANTS;
-            LIQUIDS = A_LIQUIDS;
-            SIBILANTS = A_SIBILANTS;
-            VOWELS = A_VOWELS;
-            FINALS = A_FINALS;
-            BANNED_COMBOS = A_BANNED_COMBOS;
-            CAPITALIZATION = A_CAPITALIZATION;
-            PLACE_NAME_START = A_PLACE_NAME_START;
-            PLACE_NAME_END = A_PLACE_NAME_END;
-            usedLanguage = Languages.A.getFieldDescription();
+            StringBuilder sb = new StringBuilder();
+            for(Languages s:Languages.values()) {
+                sb.append(s.fieldDescription);
+                sb.append("\n");
+            }
+            throw new IllegalArgumentException("Language code undefined!\n"+"Currently defined codes:\n"+sb.toString());
         }
 
-        for(int i = 0; i<200; i++) {
+        createMorphemes(300);
+    }
+
+    private void createMorphemes(int amount) {
+        for(int i = 0; i<amount; i++) {
             createMorpheme();
         }
     }
@@ -314,18 +324,18 @@ public class Words {
      */
     public String createCity() {
         StringBuilder cityname = new StringBuilder();
-        Random rng = new Random();
+        RNG rng = new RNG();
 
         while(getCityMorphemes().size() < 1) {
-            createMorpheme();
+            createMorphemes(5);
         }
 
         while(getCommonMorphemes().size() < 5) {
-            createMorpheme();
+            createMorphemes(5);
         }
 
         List<String> nameSyllables = new ArrayList<>();
-        int length = rng.nextInt(MAX_WORD_LENGTH-1)+1;
+        int length = (int) Math.round(rng.nextGauss(AVG_WORD_LENGTH, WORD_LENGTH_SD));
 
         int cmLength = getCityMorphemes().size();
         int coLength = getCommonMorphemes().size();
@@ -369,7 +379,8 @@ public class Words {
      */
     public String createWord() {
         StringBuilder word = new StringBuilder();
-        Random rng = new Random();
+        //Random rng = new Random();
+        RNG rng = new RNG();
 
         int coLength = getCommonMorphemes().size();
 
@@ -377,11 +388,14 @@ public class Words {
             createMorpheme();
         }
 
-        int length = rng.nextInt(MAX_WORD_LENGTH-1)+1;
+        int length = (int) Math.round(rng.nextGauss(AVG_WORD_LENGTH, WORD_LENGTH_SD));
 
+        if (length > MAX_WORD_LENGTH) {
+            length = MAX_WORD_LENGTH;
+        }
 
         // Creating a word with maximal size of MAX_WORD_LENGTH
-        // TODO: Let words hover around AVG_WORD_LENGTH;
+        // and average size of AVG_WORD_LENGTH
         for(int i = 0; i<=length;i++) {
             word.append(getCommonMorphemes().get(rng.nextInt(coLength)));
         }
@@ -424,26 +438,15 @@ public class Words {
     }
 
     /**
-     * Creating a usually very short word from just 1 or 2 morphemes, to be used as conjunction.
+     * Creating a short word, to be used as conjunction.
+     * Removes the used morpheme from the list of possible morphemes
      *
-     * @return short word as conjunction
+     * @return conjunction
      */
     public String createConjunction() {
-        StringBuilder sb = new StringBuilder();
         Random rng = new Random();
         int coLength = getCommonMorphemes().size();
-
-        // random int from [0,5[ --> 5 values {0,1,2,3,4}
-        int length = rng.nextInt(5);
-
-        sb.append(getCommonMorphemes().remove(rng.nextInt(coLength-1)));
-
-        // We use two morphemes in 2/5 cases
-        if(length <= 1) {
-            sb.append(getCommonMorphemes().remove(rng.nextInt(coLength-1)));
-        }
-
-        return sb.toString();
+        return getCommonMorphemes().remove(rng.nextInt(coLength));
     }
 
 
@@ -523,7 +526,7 @@ public class Words {
                     pos++;
 
                     // Check to skip.
-                    if(new Random().nextBoolean()) {
+                    if(new Random().nextInt(10)<=8) {
                         // we return empty handed because of the skip
                         return ' ';
                     }

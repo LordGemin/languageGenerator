@@ -56,5 +56,23 @@ public class Main {
             Sentences sentences = new Sentences();
             System.out.println("("+sentences.getUsedLanguage()+") "+"Sentence "+i+": "+sentences.createSentence());
         }
+        System.out.println("\n\n");
+
+        for(int i =1; i<=10;i++) {
+            Sentences sentences = new Sentences('A');
+            System.out.println("("+sentences.getUsedLanguage()+") "+"Sentence "+i+": "+sentences.createSentence());
+        }
+        System.out.println("\n\n");
+
+        for(int i =1; i<=100;i++) {
+            Sentences sentences = new Sentences('J');
+            System.out.println("("+sentences.getUsedLanguage()+") "+"Sentence "+i+": "+sentences.createSentence());
+        }
+        System.out.println("\n\n");
+
+        for(int i =1; i<=10;i++) {
+            Sentences sentences = new Sentences('S');
+            System.out.println("("+sentences.getUsedLanguage()+") "+"Sentence "+i+": "+sentences.createSentence());
+        }
     }
 }
