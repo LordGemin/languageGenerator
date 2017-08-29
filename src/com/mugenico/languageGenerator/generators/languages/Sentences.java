@@ -1,7 +1,7 @@
-package com.mugenico.languageGenerator.generators;
+package com.mugenico.languageGenerator.generators.languages;
 
-import com.mugenico.languageGenerator.generators.Words;
 import com.mugenico.languageGenerator.util.RNG;
+import com.mugenico.languageGenerator.generators.languages.LanguageSet.Languages;
 
 import java.util.*;
 
@@ -18,9 +18,7 @@ public class Sentences {
 
     private Words words;
 
-
-    // Define some grammar patterns for later use.
-    // TODO: Actually use  these patterns
+    // Define some grammar patterns
     private static final String GRAMMAR_PATTERN_A = "SPO(,PO)*";
     private static final String GRAMMAR_PATTERN_J = "(OP)S(OP)OP";
     private static final String GRAMMAR_PATTERN_S = "SPO(,SOP)";
@@ -50,6 +48,14 @@ public class Sentences {
             e.printStackTrace();
         }
         initializeWords(100);
+    }
+
+    public Sentences(LanguageSet ls) {
+        words = new Words(ls);
+
+        initializeWords(100);
+
+        GRAMMAR_PATTERN = ls.getGRAMMAR();
     }
 
     public Sentences(char code) {
@@ -138,11 +144,11 @@ public class Sentences {
     }
 
     private void definePattern() {
-        if(getUsedLanguage() == Words.Languages.A.getFieldDescription()) {
+        if(getUsedLanguage() == Languages.A.getFieldDescription()) {
             GRAMMAR_PATTERN = GRAMMAR_PATTERN_A;
-        } else if(getUsedLanguage() == Words.Languages.J.getFieldDescription()) {
+        } else if(getUsedLanguage() == Languages.J.getFieldDescription()) {
             GRAMMAR_PATTERN = GRAMMAR_PATTERN_J;
-        } else if(getUsedLanguage() == Words.Languages.S.getFieldDescription()) {
+        } else if(getUsedLanguage() == Languages.S.getFieldDescription()) {
             GRAMMAR_PATTERN = GRAMMAR_PATTERN_S;
         }
     }

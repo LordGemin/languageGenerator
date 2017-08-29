@@ -47,6 +47,18 @@ public class RNG extends Random{
         return rng.nextGaussian()*sd+avg;
     }
 
+    /**
+     * Boolean generator, that halves the probability of being true
+     */
+    public boolean nextLikelyFalse() {
+        return rng.nextBoolean() && rng.nextBoolean();
+    }
 
+    /**
+     * Boolean generator that has .75 probability of true
+     */
+    public boolean nextLikelyTrue() {
+        return rng.nextBoolean() || rng.nextBoolean();
+    }
 
 }

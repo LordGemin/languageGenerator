@@ -1,6 +1,8 @@
-package com.mugenico.languageGenerator.generators;
+package com.mugenico.languageGenerator.generators.languages;
 
 import com.mugenico.languageGenerator.util.RNG;
+import com.mugenico.languageGenerator.generators.languages.LanguageSet.Languages;
+
 
 import java.util.*;
 
@@ -11,49 +13,6 @@ import java.util.*;
  * Created by Gemin on 14.08.2017.
  */
 public class Words {
-
-
-    public enum Languages {
-        A('A'),
-        S('S'),
-        J('J');
-
-        private final char fieldDescription;
-
-
-        Languages(char value) {
-            fieldDescription = value;
-        }
-
-        @Override
-        public String toString() {
-            return ""+fieldDescription;
-        }
-
-        public char getFieldDescription() {
-            return fieldDescription;
-        }
-
-        public static Languages getField(char description) {
-            for(Languages a: Languages.values()) {
-                if(a.getFieldDescription() == description ) {
-                    return a;
-                }
-            }
-            return null;
-        }
-
-
-        private static final Languages[] VALUES = values();
-        private static final int SIZE = VALUES.length;
-        private static final Random RANDOM = new Random();
-
-        public static Languages randomLanguage()  {
-            return VALUES[RANDOM.nextInt(SIZE)];
-        }
-    }
-
-    private int MAX_WORD_LENGTH;
 
     // defining a structure where all syllables begin with a consonant followed by a vowel.
     // afterwards, there can be another vowel, a final, both, or none.
@@ -111,6 +70,7 @@ public class Words {
     private boolean CAPITALIZATION;
     private boolean PLACE_NAME_START;
     private boolean PLACE_NAME_END;
+    private int MAX_WORD_LENGTH;
     private double AVG_WORD_LENGTH;
 
     private double WORD_LENGTH_SD = 0.1;
@@ -166,12 +126,40 @@ public class Words {
 
     private char usedLanguage;
 
+    private LanguageSet languageSet;
+
+    public LanguageSet getLanguageSet() {
+        return languageSet;
+    }
+
 
     /**
      * Upon construction, some first Morphemes with one of the language sets are created.
      */
     public Words() throws IllegalArgumentException {
-        this(Languages.randomLanguage().getFieldDescription());
+        this(LanguageSet.Languages.randomLanguage().getFieldDescription());
+    }
+
+    /**
+     * Constructor that takes a language set as randomly created
+     */
+    public Words(LanguageSet ls) {
+        languageSet = ls;
+        CONSTRUCT = ls.getCONSTRUCT();
+        MAX_WORD_LENGTH = ls.getMAX_WORD_LENGTH();
+        CONSONANTS = ls.getCONSONANTS();
+        LIQUIDS = ls.getLIQUIDS();
+        SIBILANTS = ls.getSIBILANTS();
+        VOWELS = ls.getVOWELS();
+        FINALS = ls.getFINALS();
+        BANNED_COMBOS = ls.getBANNED_COMBOS();
+        CAPITALIZATION = ls.isCAPITALIZATION();
+        PLACE_NAME_START = ls.isPLACE_NAME_START();
+        PLACE_NAME_END = ls.isPLACE_NAME_END();
+        AVG_WORD_LENGTH = ls.getAVG_WORD_LENGTH();
+        usedLanguage = ls.getCODE();
+
+        createMorphemes(300);
     }
 
     /**
@@ -226,8 +214,8 @@ public class Words {
             usedLanguage = Languages.J.getFieldDescription();
         } else {
             StringBuilder sb = new StringBuilder();
-            for(Languages s:Languages.values()) {
-                sb.append(s.fieldDescription);
+            for(Languages s: Languages.values()) {
+                sb.append(s.getFieldDescription());
                 sb.append("\n");
             }
             throw new IllegalArgumentException("Language code undefined!\n"+"Currently defined codes:\n"+sb.toString());
@@ -316,6 +304,36 @@ public class Words {
                 getNameMorphemes().add(morpheme);
             }
         }
+    }
+
+    /**
+     * Generate your own name, language
+     */
+    public String createLanguageName() {
+        StringBuilder languageName = new StringBuilder();
+
+        RNG rng = new RNG();
+
+        while(getMorphemes().size() < 5) {
+            createMorphemes(5);
+        }
+
+        int length = (int) Math.round(rng.nextGauss(AVG_WORD_LENGTH, WORD_LENGTH_SD));
+
+        if (length > MAX_WORD_LENGTH) {
+            length = MAX_WORD_LENGTH;
+        }
+
+        // Creating a word with maximal size of MAX_WORD_LENGTH
+        // and average size of AVG_WORD_LENGTH
+        for(int i = 0; i<=length;i++) {
+            languageName.append(getMorphemes().get(rng.nextInt(getMorphemes().size())));
+        }
+
+        String toReturn = languageName.toString();
+        // Capitalize the first letter
+        return toReturn.substring(0, 1).toUpperCase() + toReturn.substring(1);
+
     }
 
     /**
