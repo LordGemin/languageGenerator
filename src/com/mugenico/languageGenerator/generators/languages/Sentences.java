@@ -53,12 +53,12 @@ public class Sentences {
     public Sentences(LanguageSet ls) {
         words = new Words(ls);
 
-        initializeWords(100);
+        initializeWords(1000);
 
         GRAMMAR_PATTERN = ls.getGRAMMAR();
     }
 
-    public Sentences(char code) {
+    public Sentences(String code) {
         try {
             words = new Words(code);
             definePattern();
@@ -130,11 +130,16 @@ public class Sentences {
         // Creating some conjuntions to use
         for(int i = 0; i<=20;i++) {
             String next = words.createConjunction();
+
             if(wordExists(next)) {
                 i--;
                 continue;
             }
             conjunctions.add(next);
+
+            if(Objects.equals(next, "")) {
+                break;
+            }
 
             // Create at least 10 conjunctions, then check for more
             if(rng.nextBoolean() && conjunctions.size()>=10) {
@@ -144,11 +149,11 @@ public class Sentences {
     }
 
     private void definePattern() {
-        if(getUsedLanguage() == Languages.A.getFieldDescription()) {
+        if(Objects.equals(getUsedLanguage(), Languages.A.getFieldDescription())) {
             GRAMMAR_PATTERN = GRAMMAR_PATTERN_A;
-        } else if(getUsedLanguage() == Languages.J.getFieldDescription()) {
+        } else if(Objects.equals(getUsedLanguage(), Languages.J.getFieldDescription())) {
             GRAMMAR_PATTERN = GRAMMAR_PATTERN_J;
-        } else if(getUsedLanguage() == Languages.S.getFieldDescription()) {
+        } else if(Objects.equals(getUsedLanguage(), Languages.S.getFieldDescription())) {
             GRAMMAR_PATTERN = GRAMMAR_PATTERN_S;
         }
     }
@@ -216,12 +221,50 @@ public class Sentences {
         return toUpperCase(sentence.append(".").toString().trim());
     }
 
+    public String createParagraph() {
+
+        RNG rng = new RNG();
+
+        StringBuilder paragraph = new StringBuilder();
+
+        boolean tooMuchAlready = false;
+        int steps = 0;
+
+        while (!tooMuchAlready) {
+            paragraph.append(createSentence());
+            paragraph.append("\n");
+            steps++;
+            if(steps<3) {
+                continue;
+            }
+            tooMuchAlready = rng.nextBoolean();
+        }
+
+        return toUpperCase(paragraph.toString().trim());
+    }
+
+    public String createLoremIpsum(int length) {
+        RNG rng = new RNG();
+
+        StringBuilder loremIpsum = new StringBuilder();
+
+        while (loremIpsum.length()<length) {
+            loremIpsum.append(createSentence()+" ");
+        }
+
+        return toUpperCase(loremIpsum.toString().trim());
+    }
+
     private String toUpperCase(String s) {
         return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
 
-    public char getUsedLanguage() {
+    public String getUsedLanguage() {
         return words.getUsedLanguage();
+    }
+
+    public Words getWords() {
+        return this.words;
     }
 
     private boolean isNoun(String word) {

@@ -73,7 +73,10 @@ public class Words {
     private int MAX_WORD_LENGTH;
     private double AVG_WORD_LENGTH;
 
-    private double WORD_LENGTH_SD = 0.1;
+
+    private static final RNG rng = new RNG();
+
+    private static final double WORD_LENGTH_SD = 0.1;
 
     // Catch all phoneme list.
     private List<String> morphemes = new ArrayList<>();
@@ -91,6 +94,7 @@ public class Words {
 
     // Morphemes used everywhere
     private List<String> commonMorphemes = new ArrayList<>();
+    private String languageName = "";
 
     public List<String> getMorphemes() {
         return morphemes;
@@ -124,7 +128,7 @@ public class Words {
         return commonMorphemes;
     }
 
-    private char usedLanguage;
+    private String usedLanguage;
 
     private LanguageSet languageSet;
 
@@ -136,7 +140,7 @@ public class Words {
     /**
      * Upon construction, some first Morphemes with one of the language sets are created.
      */
-    public Words() throws IllegalArgumentException {
+    Words() throws IllegalArgumentException {
         this(LanguageSet.Languages.randomLanguage().getFieldDescription());
     }
 
@@ -157,9 +161,9 @@ public class Words {
         PLACE_NAME_START = ls.isPLACE_NAME_START();
         PLACE_NAME_END = ls.isPLACE_NAME_END();
         AVG_WORD_LENGTH = ls.getAVG_WORD_LENGTH();
-        usedLanguage = ls.getCODE();
 
-        createMorphemes(300);
+        createMorphemes(3000);
+        usedLanguage = ls.getCODE(this);
     }
 
     /**
@@ -168,9 +172,8 @@ public class Words {
      * @param code Language code to be used. currently defined codes can be found in Languages
      * @throws IllegalArgumentException if code is yet undefined
      */
-    public Words(char code) throws IllegalArgumentException {
-
-        if(code == Languages.A.getFieldDescription()) {
+    Words(String code) throws IllegalArgumentException {
+        if(Objects.equals(code, Languages.A.getFieldDescription())) {
             CONSTRUCT = A_CONSTRUCT;
             MAX_WORD_LENGTH = A_MAX_WORD_LENGTH;
             CONSONANTS = A_CONSONANTS;
@@ -184,7 +187,7 @@ public class Words {
             PLACE_NAME_END = A_PLACE_NAME_END;
             AVG_WORD_LENGTH = A_AVG_WORD_LENGTH;
             usedLanguage = Languages.A.getFieldDescription();
-        } else if (code == Languages.S.getFieldDescription()) {
+        } else if (Objects.equals(code, Languages.S.getFieldDescription())) {
             CONSTRUCT = SK_CONSTRUCT;
             MAX_WORD_LENGTH = SK_MAX_WORD_LENGTH;
             CONSONANTS = SK_CONSONANTS;
@@ -198,7 +201,7 @@ public class Words {
             PLACE_NAME_END = SK_PLACE_NAME_END;
             AVG_WORD_LENGTH = SK_AVG_WORD_LENGTH;
             usedLanguage = Languages.S.getFieldDescription();
-        } else if (code == Languages.J.getFieldDescription()) {
+        } else if (Objects.equals(code, Languages.J.getFieldDescription())) {
             CONSTRUCT = J_CONSTRUCT;
             MAX_WORD_LENGTH = J_MAX_WORD_LENGTH;
             CONSONANTS = J_CONSONANTS;
@@ -221,7 +224,7 @@ public class Words {
             throw new IllegalArgumentException("Language code undefined!\n"+"Currently defined codes:\n"+sb.toString());
         }
 
-        createMorphemes(300);
+        createMorphemes(3000);
     }
 
     private void createMorphemes(int amount) {
@@ -236,8 +239,6 @@ public class Words {
      */
     private void createMorpheme() {
         String morpheme = "";
-
-        Random rng = new Random();
 
         Parser parser = new Parser(CONSTRUCT);
 
@@ -267,21 +268,15 @@ public class Words {
         }
 
         // Check if the created morpheme is on the language specific banned list
-        boolean banned = false;
-
-        for(String s: BANNED_COMBOS) {
+         for(String s: BANNED_COMBOS) {
             if(morpheme.contains(s)) {
-                banned = true;
+                return;
             }
-        }
-
-        if (banned) {
-            return ;
         }
 
         // Check if the morpheme is empty for some reason, we don't want those
         if (morpheme.equals("")) {
-            return ;
+            return;
         }
 
         if(!morphemeExists(morpheme)) {
@@ -310,9 +305,11 @@ public class Words {
      * Generate your own name, language
      */
     public String createLanguageName() {
+        // Check if we did this before
+        if (!languageName.equals("")) {
+            return this.languageName;
+        }
         StringBuilder languageName = new StringBuilder();
-
-        RNG rng = new RNG();
 
         while(getMorphemes().size() < 5) {
             createMorphemes(5);
@@ -332,7 +329,8 @@ public class Words {
 
         String toReturn = languageName.toString();
         // Capitalize the first letter
-        return toReturn.substring(0, 1).toUpperCase() + toReturn.substring(1);
+        this.languageName = toReturn.substring(0, 1).toUpperCase() + toReturn.substring(1);
+        return this.languageName;
 
     }
 
@@ -344,12 +342,22 @@ public class Words {
         StringBuilder cityname = new StringBuilder();
         RNG rng = new RNG();
 
+        int steps = 0;
+
         while(getCityMorphemes().size() < 1) {
             createMorphemes(5);
+            steps++;
+            if(steps>20000) {
+                return "ERROR";
+            }
         }
 
         while(getCommonMorphemes().size() < 5) {
             createMorphemes(5);
+            steps++;
+            if(steps>20000) {
+                return "ERROR";
+            }
         }
 
         List<String> nameSyllables = new ArrayList<>();
@@ -397,8 +405,6 @@ public class Words {
      */
     public String createWord() {
         StringBuilder word = new StringBuilder();
-        //Random rng = new Random();
-        RNG rng = new RNG();
 
         int coLength = getCommonMorphemes().size();
 
@@ -406,17 +412,37 @@ public class Words {
             createMorpheme();
         }
 
-        int length = (int) Math.round(rng.nextGauss(AVG_WORD_LENGTH, WORD_LENGTH_SD));
-
-        if (length > MAX_WORD_LENGTH) {
-            length = MAX_WORD_LENGTH;
+        // We create words based on the Gaussian distribution of word-lengths
+        // This creates longer words than before, but also makes them much more varied in length
+        // At least this is the working hypothesis
+        while(true) {
+            word.append(getCommonMorphemes().get(rng.nextInt(coLength)));
+            double lower = word.length()/getAvgMorphLength();
+            double upper = rng.nextGauss(AVG_WORD_LENGTH, WORD_LENGTH_SD);
+            if(lower > upper) {
+                break;
+            } else {
+                if (rng.nextLikelyFalse()) {
+                    break;
+                }
+            }
         }
+
+        // sometimes the above code will generate words waayy too long. So we cut these down to size (creating some exceptions to our constructs
+        // But in ~25% of cases of way too long words, we will keep it, as it's own exception of the expectations
+        if (word.length() > (MAX_WORD_LENGTH*getAvgMorphLength())) {
+            if(rng.nextLikelyTrue()) {
+                word.subSequence(0,(int)Math.round(MAX_WORD_LENGTH*getAvgMorphLength())-3);
+            }
+        }
+/*
 
         // Creating a word with maximal size of MAX_WORD_LENGTH
         // and average size of AVG_WORD_LENGTH
         for(int i = 0; i<=length;i++) {
             word.append(getCommonMorphemes().get(rng.nextInt(coLength)));
         }
+*/
 
         String toReturn = word.toString();
 
@@ -439,7 +465,7 @@ public class Words {
         return toReturn.substring(0, 1).toUpperCase() + toReturn.substring(1);
     }
 
-    public boolean usesCAPITALIZATION () {
+    boolean usesCAPITALIZATION() {
         return CAPITALIZATION;
     }
 
@@ -449,7 +475,7 @@ public class Words {
      *
      * @return a created article
      */
-    public String createArticle() {
+    String createArticle() {
         Random rng = new Random();
         int coLength = getCommonMorphemes().size();
         return getCommonMorphemes().remove(rng.nextInt(coLength));
@@ -461,15 +487,39 @@ public class Words {
      *
      * @return conjunction
      */
-    public String createConjunction() {
-        Random rng = new Random();
+    String createConjunction() {
         int coLength = getCommonMorphemes().size();
+        if(coLength<5) {
+            return "";
+        }
         return getCommonMorphemes().remove(rng.nextInt(coLength));
     }
 
 
-    public char getUsedLanguage() {
+    String getUsedLanguage() {
         return usedLanguage;
+    }
+
+    private double AvgMorphLength = 0;
+
+    double getAvgMorphLength() {
+        if(AvgMorphLength!=0) {
+            return AvgMorphLength;
+        }
+        double length = 0;
+
+        for(String morph:getMorphemes()) {
+            length += morph.length();
+        }
+
+        return length/getMorphemes().size();
+    }
+
+    public String getLanguageName() {
+        if(languageName.equals("")) {
+            return createLanguageName();
+        }
+        return languageName;
     }
 
     private boolean morphemeExists(String morpheme) {

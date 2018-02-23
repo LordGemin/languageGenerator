@@ -20,12 +20,13 @@ public class Main {
      * For now this will only start the subroutine in another class
      */
     public static void main(String[] args) {
-        Words words = new Words(new LanguageSet());
 
-        LanguageSet ls = words.getLanguageSet();
+        LanguageSet ls = new LanguageSet();
+        Words words = new Words(ls);
+
         System.out.println("\nGrammar: ");
-        System.out.println("Language Name: "+ words.createLanguageName());
-        System.out.println("Code: "+ls.getCODE());
+        System.out.println("Language Name: "+ ls.getNAME(words));
+        System.out.println("Shorthand: "+ls.getCODE(words));
         System.out.println("Construct: "+ls.getCONSTRUCT());
         System.out.println("Grammar: "+ls.getGRAMMAR());
         System.out.println("Vowels: "+ Arrays.toString(ls.getVOWELS()));
@@ -62,10 +63,31 @@ public class Main {
         System.out.println(words.createWord());
         System.out.println(words.createWord());
 
+        Sentences sentences = new Sentences(ls);
+
+        System.out.println("\n Sentences: ");
+
         for(int i =1; i<=10;i++) {
-            Sentences sentences = new Sentences(ls);
             System.out.println("("+sentences.getUsedLanguage()+") "+"Sentence "+i+": "+sentences.createSentence());
         }
+
+        System.out.println("\n Paragraph: ");
+        System.out.println("Ancient Paragraph written in "+ words.getLanguageName()+":\n"+sentences.createParagraph());
+        System.out.println("\n");
+
+        for(int i=1; i<=10;i++) {
+            ls = new LanguageSet();
+            sentences = new Sentences(ls);
+
+            System.out.println("Lorem Ipsum of: "+ls.getCODE(sentences.getWords()));
+            System.out.println(sentences.createLoremIpsum(2000)+"\n");
+
+//            System.out.println("\n A new language: "+sentences.getWords().getLanguageName());
+//            System.out.println("\n Average word length: "+ls.getAVG_WORD_LENGTH());
+//            System.out.println("\n Average morpheme length: "+sentences.getWords().getAvgMorphLength());
+//            System.out.println("Ancient Paragraph written:\n"+sentences.createParagraph());
+        }
+
 
 //
 //
