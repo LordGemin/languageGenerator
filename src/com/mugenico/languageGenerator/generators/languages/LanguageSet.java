@@ -65,7 +65,7 @@ public class LanguageSet {
     private final String[] POSSIBLE_V_MODIFIERS= {"ui", "iu", "io", "au", "eu", "ou", "uo", "ao", "oe", "ä", "ö", "ü", "å", "ū", "ō"};
 
     private String[] LIQUIDS;
-    private final String POSSIBLE_LIQUIDS = "rl";
+    private final String POSSIBLE_LIQUIDS = "rlwcd";
     private final String[] POSSIBLE_L_MODIFIERS = {"sch", "sh"};
 
     private String[] SIBILANTS;
@@ -83,9 +83,10 @@ public class LanguageSet {
     private int MAX_WORD_LENGTH;
     private double AVG_WORD_LENGTH;
 
-    private static RNG rng = new RNG();
+    private RNG rng;
 
     public LanguageSet() {
+        rng = new RNG();
         do {
             generateCONSONANTS();
             generateVOWELS();
@@ -104,6 +105,36 @@ public class LanguageSet {
             generateCONSTRUCT();
             generateGrammar();
         }while(estimateCombinations() < 999);
+    }
+
+    public LanguageSet(RNG rng) {
+        this.rng = rng;
+        do {
+            generateCONSONANTS();
+            generateVOWELS();
+            generateLIQUIDS();
+            generateSIBILANTS();
+            generateFINALS();
+            generateBANNED_COMBOS();
+            generateBANNED_COMBOS();
+            decideCAPTITALIZATION();
+            generatePLACE_NAME_POSITION();
+            //TODO: Add functions in Words.java to work with counting characters instead of morphemes
+            generateMAX_WORD_LENGTH('m');
+            generateAVG_WORD_LENGTH('m');
+
+
+            generateCONSTRUCT();
+            generateGrammar();
+        }while(estimateCombinations() < 999);
+    }
+
+    public RNG getRng() {
+        return rng;
+    }
+
+    public void setRng(RNG rng) {
+        this.rng = rng;
     }
 
     public String getCODE(Words words) {
@@ -236,6 +267,7 @@ public class LanguageSet {
                 add='V';
             }
 
+
             // We only want Finals to be at the end, as the name implies, so if we get 'F' before our length reaches 3, we roll again until we have ANYTHING else
             // If we already reached 4, we break out of our loop, and let the final be final.
             if(con.length() >= 4 && add == 'F') {
@@ -287,7 +319,7 @@ public class LanguageSet {
             con.append(add);
             realLength++;
 
-            // Sometimes we add operators for funsies, but only after some stability
+            // Sometimes we add operators for funnies, but only after some stability
             if(rng.nextBoolean() && realLength>2) {
                 String operator = operators[rng.nextInt(operators.length)];
                 if(!Objects.equals(operator, lastOperator)) {
@@ -298,8 +330,12 @@ public class LanguageSet {
         }
 
         // Finally, let our monster be created =3
-        CONSTRUCT = con.toString();
-
+        // But first, add a C somewhere in there if the code ignored it completely
+        if (!con.toString().contains("C")) {
+            CONSTRUCT = con.insert(rng.nextInt(con.length()),'C').toString();
+        } else {
+            CONSTRUCT = con.toString();
+        }
     }
 
     /**
@@ -467,9 +503,12 @@ public class LanguageSet {
         String Liquids = POSSIBLE_LIQUIDS;
         String[] modifier = POSSIBLE_L_MODIFIERS;
         List<String> l = new ArrayList<>();
+        boolean needsOneMore = false;
 
-        // Liquids will only be added by chance, and if, than only few. One or two should be enough
-        while(rng.nextLikelyFalse()) {
+        // Liquids will only be added by chance, and if, than only few. One will result in weird garbage. (e.g. "Tjij mjijmjij Zjij ljijljajwjaj")
+        // So if we have inserted one, at least get one more.
+        while(rng.nextLikelyFalse() || needsOneMore) {
+            needsOneMore = true;
             String add;
             // We want very few of the above "modifiers", so we lessen the probability by running the improbable check twice
             if (rng.nextLikelyFalse() && rng.nextLikelyFalse()) {
@@ -480,6 +519,9 @@ public class LanguageSet {
             // Check if we already choose this consonant or modifier, add only if needs be;
             if (!l.contains(add)) {
                 l.add(add);
+            }
+            if(l.size() > 1) {
+                needsOneMore=false;
             }
         }
 
@@ -497,9 +539,10 @@ public class LanguageSet {
         String sibilants = POSSIBLE_SIBILANTS;
         String[] s_modifier = POSSIBLE_S_MODIFIERS;
         List<String> s = new ArrayList<>();
-
+        boolean needsOneMore = false;
         // sibilants will only be added by chance, and if, than only few. One or two should be enough
-        while(rng.nextLikelyFalse()) {
+        while(rng.nextLikelyFalse()|| needsOneMore) {
+            needsOneMore = true;
             String add;
             // We want a few of the above "modifiers", so we lessen the probability by running the improbable check twice
             if (rng.nextLikelyFalse()) {
@@ -510,6 +553,10 @@ public class LanguageSet {
             // Check if we already choose this sibilant or modifier, add only if needs be;
             if (!s.contains(add)) {
                 s.add(add);
+            }
+
+            if(s.size() > 1) {
+                needsOneMore=false;
             }
         }
 
@@ -528,8 +575,11 @@ public class LanguageSet {
         String[] f_modifier = POSSIBLE_F_MODIFIERS;
         List<String> f = new ArrayList<>();
 
+        boolean needsOneMore = false;
+
         // finals will only be added by chance, and if, than only few. One or two should be enough
-        while(rng.nextLikelyFalse()) {
+        while(rng.nextLikelyFalse() || needsOneMore) {
+            needsOneMore = true;
             String add;
             // We want a few of the above "modifiers", so we lessen the probability by running the improbable check twice
             if (rng.nextLikelyFalse()) {
@@ -540,6 +590,10 @@ public class LanguageSet {
             // Check if we already choose this final or modifier, add only if needs be;
             if (!f.contains(add)) {
                 f.add(add);
+            }
+
+            if (f.size()>1) {
+                needsOneMore = false;
             }
         }
 

@@ -25,6 +25,7 @@ public class Sentences {
 
     private String GRAMMAR_PATTERN;
 
+    private RNG rng;
 
     // indefinite length
     private List<String> nouns = new ArrayList<>();
@@ -33,7 +34,7 @@ public class Sentences {
     // indefinite length
     private List<String> adjectives = new ArrayList<>();
     // length should be 0~4 on this for now
-    private String[] articles = new String[4];
+    private List<String> articles = new ArrayList<>();
     private int articleCount = 0;
     // should not get too long, as most languages don't know nearly as many conjunctions as nouns
     private List<String> conjunctions = new ArrayList<>();
@@ -41,6 +42,7 @@ public class Sentences {
 
     // default constructor to prefill some nouns, verbs and adjectives
     public Sentences() {
+        this.rng = new RNG();
         try {
             words = new Words();
             definePattern();
@@ -51,6 +53,7 @@ public class Sentences {
     }
 
     public Sentences(LanguageSet ls) {
+        this.rng = ls.getRng();
         words = new Words(ls);
 
         initializeWords(1000);
@@ -110,7 +113,7 @@ public class Sentences {
         }
 
         // Creating 0-4 articles to use in our language
-        for(int i = 0; i<=3; i++) {
+        for(int i = 0; i<4; i++) {
 
             // We make it improbable to have 4 articles, by checking every time if we need another one
             // TODO: Find better distribution
@@ -123,7 +126,7 @@ public class Sentences {
                 i--;
                 continue;
             }
-            articles[i] = next;
+            articles.add(next);
             articleCount++;
         }
 
@@ -165,14 +168,12 @@ public class Sentences {
         allWords.addAll(verbs);
         allWords.addAll(adjectives);
         allWords.addAll(conjunctions);
-        Collections.addAll(allWords, articles);
+        allWords.addAll(articles);
 
         return allWords.contains(word);
     }
 
     public String createSentence() {
-        RNG rng = new RNG();
-
         StringBuilder sentence = new StringBuilder();
         GrammarParser gp = new GrammarParser(GRAMMAR_PATTERN);
 
@@ -182,7 +183,7 @@ public class Sentences {
                 case 'S':
                     if (articleCount != 0 && rng.nextBoolean()) {
                         sentence.append(" ");
-                        sentence.append(articles[rng.nextInt(articleCount)]);
+                        sentence.append(articles.get(rng.nextInt(articleCount)));
                     }
                     if(rng.nextBoolean()) {
                         sentence.append(" ");
@@ -192,9 +193,9 @@ public class Sentences {
                     sentence.append(nouns.get(rng.nextInt(nouns.size())));
                     break;
                 case 'O':
-                    if (articleCount != 0) {
+                    if (articleCount != 0 && rng.nextLikelyFalse()) {
                         sentence.append(" ");
-                        sentence.append(articles[rng.nextInt(articleCount)]);
+                        sentence.append(articles.get(rng.nextInt(articleCount)));
                     }
                     if(rng.nextBoolean()) {
                         sentence.append(" ");
@@ -222,9 +223,6 @@ public class Sentences {
     }
 
     public String createParagraph() {
-
-        RNG rng = new RNG();
-
         StringBuilder paragraph = new StringBuilder();
 
         boolean tooMuchAlready = false;
@@ -243,9 +241,17 @@ public class Sentences {
         return toUpperCase(paragraph.toString().trim());
     }
 
-    public String createLoremIpsum(int length) {
-        RNG rng = new RNG();
+    public String createParagraph(int length) {
+        StringBuilder paragraph = new StringBuilder();
 
+        for(int i = 0; i<length;i++) {
+            paragraph.append(createSentence());
+            paragraph.append("\n");
+        }
+        return toUpperCase(paragraph.toString().trim());
+    }
+
+    public String createLoremIpsum(int length) {
         StringBuilder loremIpsum = new StringBuilder();
 
         while (loremIpsum.length()<length) {
@@ -280,7 +286,7 @@ public class Sentences {
     }
 
     private boolean isArticle(String word) {
-        return new ArrayList<String>(adjectives).contains(word);
+        return new ArrayList<String>(articles).contains(word);
     }
 
     private boolean isConjunction(String word) {

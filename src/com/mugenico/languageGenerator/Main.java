@@ -4,8 +4,10 @@ package com.mugenico.languageGenerator;
 import com.mugenico.languageGenerator.generators.languages.LanguageSet;
 import com.mugenico.languageGenerator.generators.languages.Sentences;
 import com.mugenico.languageGenerator.generators.languages.Words;
+import com.mugenico.languageGenerator.util.RNG;
 
 import java.util.Arrays;
+import java.util.Scanner;
 
 /**
  * Starter class to experiment with procedurally generated constructed languages
@@ -21,12 +23,25 @@ public class Main {
      */
     public static void main(String[] args) {
 
-        LanguageSet ls = new LanguageSet();
+        long seed = new RNG().nextLong();
+
+        if(args.length != 0) {
+            try {
+                seed = Long.parseLong(args[0]);
+            } catch (NumberFormatException e) {
+                System.out.println("Please reference a number in your call.");
+            }
+        }
+
+        RNG global_rng = new RNG(seed);
+
+        LanguageSet ls = new LanguageSet(global_rng);
         Words words = new Words(ls);
 
         System.out.println("\nGrammar: ");
         System.out.println("Language Name: "+ ls.getNAME(words));
         System.out.println("Shorthand: "+ls.getCODE(words));
+        System.out.println("Seed: " + seed);
         System.out.println("Construct: "+ls.getCONSTRUCT());
         System.out.println("Grammar: "+ls.getGRAMMAR());
         System.out.println("Vowels: "+ Arrays.toString(ls.getVOWELS()));
@@ -34,7 +49,7 @@ public class Main {
         System.out.println("Finals: "+ Arrays.toString(ls.getFINALS()));
         System.out.println("Sibilants: "+ Arrays.toString(ls.getSIBILANTS()));
         System.out.println("Liquids: "+ Arrays.toString(ls.getLIQUIDS()));
-
+/*
         System.out.println("\n Stats: ");
         System.out.println("Number of created morphemes: "+words.getMorphemes().size());
         System.out.println("Number of created city morphemes: "+words.getCityMorphemes().size());
@@ -62,7 +77,7 @@ public class Main {
         System.out.println(words.createWord());
         System.out.println(words.createWord());
         System.out.println(words.createWord());
-
+    */
         Sentences sentences = new Sentences(ls);
 
         System.out.println("\n Sentences: ");
@@ -72,14 +87,16 @@ public class Main {
         }
 
         System.out.println("\n Paragraph: ");
-        System.out.println("Ancient Paragraph written in "+ words.getLanguageName()+":\n"+sentences.createParagraph());
+        System.out.println("Ancient Paragraph written in "+ words.getLanguageName()+":\n"+sentences.createParagraph(6));
         System.out.println("\n");
 
         for(int i=1; i<=10;i++) {
-            ls = new LanguageSet();
+            seed = new RNG().nextLong();
+
+            ls = new LanguageSet(new RNG(seed));
             sentences = new Sentences(ls);
 
-            System.out.println("Lorem Ipsum of: "+ls.getCODE(sentences.getWords()));
+            System.out.println("Lorem Ipsum of: "+ls.getNAME(sentences.getWords())+" (Seed: "+seed+")");
             System.out.println(sentences.createLoremIpsum(2000)+"\n");
 
 //            System.out.println("\n A new language: "+sentences.getWords().getLanguageName());

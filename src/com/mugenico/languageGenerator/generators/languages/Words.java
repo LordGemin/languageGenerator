@@ -74,7 +74,7 @@ public class Words {
     private double AVG_WORD_LENGTH;
 
 
-    private static final RNG rng = new RNG();
+    private RNG rng;
 
     private static final double WORD_LENGTH_SD = 0.1;
 
@@ -148,6 +148,8 @@ public class Words {
      * Constructor that takes a language set as randomly created
      */
     public Words(LanguageSet ls) {
+        this.rng = ls.getRng();
+
         languageSet = ls;
         CONSTRUCT = ls.getCONSTRUCT();
         MAX_WORD_LENGTH = ls.getMAX_WORD_LENGTH();
@@ -340,7 +342,6 @@ public class Words {
      */
     public String createCity() {
         StringBuilder cityname = new StringBuilder();
-        RNG rng = new RNG();
 
         int steps = 0;
 

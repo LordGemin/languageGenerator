@@ -1,6 +1,7 @@
 package com.mugenico.languageGenerator.util;
 
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Utility implementing a random generator with bounds
@@ -9,14 +10,12 @@ import java.util.Random;
  */
 public class RNG extends Random{
 
-    Random rng;
-
     public RNG() {
-        rng = new Random();
+        super();
     }
 
     public RNG(long seed) {
-        rng = new Random(seed);
+        super(seed);
     }
 
     /**
@@ -30,11 +29,11 @@ public class RNG extends Random{
 
         if(min > max) {
             int diff = min-max;
-            return max+rng.nextInt(diff+1);
+            return max+nextInt(diff+1);
         }
 
         int diff = max-min;
-        return min+rng.nextInt(diff+1);
+        return min+nextInt(diff+1);
     }
 
 
@@ -44,21 +43,20 @@ public class RNG extends Random{
      * @return a number within the gaussian bell around avg with standard deviation sd
      */
     public double nextGauss(double avg, double sd) {
-        return rng.nextGaussian()*sd+avg;
+        return nextGaussian()*sd+avg;
     }
 
     /**
      * Boolean generator, that halves the probability of being true
      */
     public boolean nextLikelyFalse() {
-        return rng.nextBoolean() && rng.nextBoolean();
+        return nextBoolean() && nextBoolean();
     }
 
     /**
      * Boolean generator that has .75 probability of true
      */
     public boolean nextLikelyTrue() {
-        return rng.nextBoolean() || rng.nextBoolean();
+        return nextBoolean() || nextBoolean();
     }
-
 }
