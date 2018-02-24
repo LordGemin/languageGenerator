@@ -210,6 +210,10 @@ public class Sentences {
                     sentence.append(verb);
                     break;
                 case ',':
+                    if(conjunctions.size()==0) {
+                        sentence.append(",");
+                        break;
+                    }
                     sentence.append(", ");
                     sentence.append(conjunctions.get(rng.nextInt(conjunctions.size())));
                     break;

@@ -58,7 +58,7 @@ public class LanguageSet {
 
     private String[] CONSONANTS;
     private final String POSSIBLE_CONSONANTS="bcdfghjklrmnpqstvwxyz";
-    private final String[] POSSIBLE_C_MODIFIERS={"sk", "sch", "st", "kh", "ch", "sh", "sc", "hk", "kt", "ct", "pr", "br", "vr", "wr", "zt", "tz", "tzt"};
+    private final String[] POSSIBLE_C_MODIFIERS={"nd", "sk", "sch", "st", "kh", "ch", "sh", "sc", "hk", "kt", "ct", "br", "zt", "tz", "tzt"};
 
     private String[] VOWELS;
     private final String POSSIBLE_VOWELS="aeiou";
@@ -659,8 +659,8 @@ public class LanguageSet {
                 // Generate a random average word length that is at least .3 smaller than MAX_WORD_LENGTH
                 do {
                     //Random Value between 0.5 and 3
-                    AVG_WORD_LENGTH = 0.5 + rng.nextFloat() * 2.5;
-                } while(AVG_WORD_LENGTH > MAX_WORD_LENGTH-0.5);
+                    AVG_WORD_LENGTH = 0.5 + rng.nextFloat() * 2.8;
+                } while(AVG_WORD_LENGTH > MAX_WORD_LENGTH-0.3);
                 break;
             case 'c':
                 // Generate a random average word length that is at least 3 smaller than MAX_WORD_LENGTH
