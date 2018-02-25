@@ -221,6 +221,7 @@ public class LanguageSet {
         boolean needsL = false;
         boolean needsS = false;
         boolean needsV = true;
+        boolean needsF = false;
 
         StringBuilder c = new StringBuilder();
         c.append('C');
@@ -236,6 +237,7 @@ public class LanguageSet {
         }
         if(FINALS.length != 0) {
             c.append('F');
+            needsF = true;
         }
 
         String components = c.toString();
@@ -272,6 +274,13 @@ public class LanguageSet {
             // If we already reached 4, we break out of our loop, and let the final be final.
             if(con.length() >= 4 && add == 'F') {
                 con.append(add);
+                // We want finals to be optional for most languages.
+                if(rng.nextLikelyTrue()) {
+                    String operator = operators[rng.nextInt(operators.length)];
+                    if(!Objects.equals(operator, lastOperator)) {
+                        con.append(operator);
+                    }
+                }
                 break;
             } else while (add == 'F') {
                 // The ANYTHING referred to above can be a hard coded vowel, if the rng says so. This is to heighten the chance of comprehensible stuff.
@@ -305,8 +314,12 @@ public class LanguageSet {
             if(add == 'S') {
                 needsS = false;
             }
-            if(add == 'V') {
+            // First Vowel has to be without modifier, or we might still end up in utter disasters. So many fixes
+            if(add == 'V' && needsV) {
+                con.append(add);
+                realLength++;
                 needsV = false;
+                continue;
             }
 
             if(add == 'F') {
@@ -314,7 +327,7 @@ public class LanguageSet {
                 break;
             }
 
-            needsMore = needsL||needsS||needsV;
+            needsMore = needsL||needsS||needsV||needsF;
 
             con.append(add);
             realLength++;

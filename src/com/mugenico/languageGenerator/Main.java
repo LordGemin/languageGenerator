@@ -22,7 +22,6 @@ public class Main {
      * For now this will only start the subroutine in another class
      */
     public static void main(String[] args) {
-
         long seed = new RNG().nextLong();
 
         if(args.length != 0) {

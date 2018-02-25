@@ -76,7 +76,7 @@ public class Words {
 
     private RNG rng;
 
-    private static final double WORD_LENGTH_SD = 0.1;
+    private static final double WORD_LENGTH_SD = 0.5;
 
     // Catch all phoneme list.
     private List<String> morphemes = new ArrayList<>();
@@ -503,7 +503,7 @@ public class Words {
 
     private double AvgMorphLength = 0;
 
-    double getAvgMorphLength() {
+    public double getAvgMorphLength() {
         if(AvgMorphLength!=0) {
             return AvgMorphLength;
         }
