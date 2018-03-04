@@ -36,6 +36,13 @@ public class RNG extends Random{
         return min+nextInt(diff+1);
     }
 
+    /**
+     * Return the next double within a range
+     *
+     */
+    public double nextBoundDouble(double min, double max) {
+        return min+(nextDouble()*(max-min));
+    }
 
     /**
      * Advanced Gaussian generator with standard deviation and the avg around which the number should be generated
