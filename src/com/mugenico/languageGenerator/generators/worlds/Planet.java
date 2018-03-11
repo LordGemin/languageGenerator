@@ -2,8 +2,6 @@ package com.mugenico.languageGenerator.generators.worlds;
 
 import com.mugenico.languageGenerator.util.RNG;
 
-import java.math.BigDecimal;
-
 /**
  * Class to create a base Planet that we can base our tectonics, continents and oceans on.
  * This class will generate the physical properties of our Planet.
@@ -30,7 +28,13 @@ public class Planet {
     private double mass;
     private double length_day;
     private double length_year;
-    private double median_temperature;
+    private double mean_temperature;
+    private double surface;
+
+    // Measurements in relation to the star
+    private double stellarMass = 1.98855E30;
+    private double semiMajorAxis;
+    private double semiMinorAxis;
 
     // Chemical Measurements
     private double oxygenLevel;
@@ -40,9 +44,22 @@ public class Planet {
     private double heliumLevel;
     private double phosphorusLevel;
 
-    // Stub constructor
-    public Planet() {
+    // Molecules in the atmosphere
+    private double o2;
+    private double ch4;
+    private double c02;
+    private double h20;
 
+    // Climate-related measurements
+    private double temperature_gradient;
+
+    // Constructor gives a randomly generated planet.
+    public Planet() {
+        generatePlanet();
+    }
+
+    public Planet(RNG rng) {
+        this.rng = rng;
     }
 
     // Getters and Setters, folded for beauty
@@ -79,12 +96,20 @@ public class Planet {
         this.length_year = length_year;
     }
 
-    public double getMedian_temperature() {
-        return median_temperature;
+    public double getMean_temperature() {
+        return mean_temperature;
     }
 
-    public void setMedian_temperature(double median_temperature) {
-        this.median_temperature = median_temperature;
+    public void setMean_temperature(double mean_temperature) {
+        this.mean_temperature = mean_temperature;
+    }
+
+    public double getSurface() {
+        return surface;
+    }
+
+    public void setSurface(double surface) {
+        this.surface = surface;
     }
 
     public double getDensity() {
@@ -127,6 +152,14 @@ public class Planet {
         this.nitrogenLevel = nitrogenLevel;
     }
 
+    public double getPhosphorusLevel() {
+        return phosphorusLevel;
+    }
+
+    public void setPhosphorusLevel(double phosphorusLevel) {
+        this.phosphorusLevel = phosphorusLevel;
+    }
+
     public double getHeliumLevel() {
         return heliumLevel;
     }
@@ -135,13 +168,6 @@ public class Planet {
         this.heliumLevel = heliumLevel;
     }
 
-    public double getPhosphorusLevel() {
-        return phosphorusLevel;
-    }
-
-    public void setPhosphorusLevel(double phosphorusLevel) {
-        this.phosphorusLevel = phosphorusLevel;
-    }
 
     /**
      * Using some Wikipedia magic, we calculate the flattening coefficient of our planet
@@ -296,6 +322,11 @@ public class Planet {
             livable = false;
         }
 
+        // Leaning far out here, but plants can probably not set root on a jupiter-like planet
+        if(density<1500) {
+            livable = false;
+        }
+
         // ATP
         if(nitrogenLevel<0.1) {
             livable = false;
@@ -354,5 +385,91 @@ public class Planet {
         density = rng.nextBoundDouble(500, 10000);
         length_day = rng.nextBoundDouble(500,100000);
         length_year = rng.nextBoundDouble(500000, 9E8);
+
+        double inRoot = (length_day*length_year*G*stellarMass)/(4*Math.PI*Math.PI);
+        semiMajorAxis = Math.pow(inRoot,1/3);
+
+        // It's more unlikely to have an extremely elliptical orbit, so we make a negativity check
+        // If it returns true, we calculate even probability of extremely elliptical and circle
+        // Else, we stew towards very circular orbits.
+        if(rng.nextLikelyFalse()) {
+            semiMinorAxis = semiMajorAxis * rng.nextBoundDouble(0.1, 1);
+        } else {
+            semiMinorAxis = semiMinorAxis * rng.nextBoundDouble(0.8, 1);
+        }
     }
+
+    /**
+     * Function to calculate the temperature gradient
+     */
+    public double calculateTemperatureGradient() {
+        mean_temperature = calculateStefanBoltzmanLaw((semiMajorAxis+semiMinorAxis)/2);
+
+        // The more extreme the flattening, the more extreme the falloff in temperature when we get near the polar
+        temperature_gradient = Math.pow(calculateFlatteningCoefficient()+1, 5);
+
+        return temperature_gradient;
+    }
+
+    /**
+     * We calculate the eccentricity using center-to-focus = a*e
+     *
+     * @return The distance from center of orbital ellipse to focal point (star)
+     */
+    private double linearEccentricity() {
+        return semiMajorAxis*orbitalEccentricity();
+    }
+
+    /**
+     * We calculate the eccentricity using 1-b²/a² = e²
+     *
+     * @return The eccentricity 0 <= e <= 1
+     */
+    private double orbitalEccentricity() {
+        return Math.sqrt(1-(semiMinorAxis*semiMinorAxis)/(semiMajorAxis*semiMajorAxis));
+    }
+
+    /**
+     * Using the eccentricity of the orbit, we calculate the minimal distance from the star
+     *
+     * @return Maximal Temperature we expect on the planet just from stellar radiation
+     */
+    private double calculateMaxTemperature() {
+        double minimalDistance = semiMajorAxis - linearEccentricity();
+        return calculateStefanBoltzmanLaw(minimalDistance);
+    }
+
+    /**
+     * Using the eccentricity of the orbit, we calculate the maximal distance from the star
+     *
+     * @return Minimal temperature we expect on the planet just from stellar radiation
+     */
+    private double calculateMinTemperature() {
+        double maximalDistance = semiMajorAxis + linearEccentricity();
+        return calculateStefanBoltzmanLaw(maximalDistance);
+    }
+
+    /**
+     * There is a formular for approximating the mean temperature of a planet by using the distance from the sun
+     * As we are creating planets, we will assume our star is the sun.
+     * In this formula we also ignore the effects that atmosphere and tilt would have.
+     *
+     * @param distance The distance we want to use for our calculation
+     * @return The calculated, simplified mean temperature of a planet
+     */
+    private double calculateStefanBoltzmanLaw(double distance) {
+        return 5780*Math.pow((695000000/(distance*2)),0.5);
+    }
+
+    /**
+     *
+     * @return Surface area of the planet
+     */
+    public double calculateSurfaceArea() {
+        double c_square = calculatePolarRadius()*calculatePolarRadius();
+        double a_square = calculateEquatorialRadius()*calculateEquatorialRadius();
+        double e = Math.sqrt(1-(c_square/a_square));
+        return (2*Math.PI*a_square)+(Math.PI*(c_square/e)*Math.log((1+e)/(1-e)));
+    }
+
 }
